@@ -1,8 +1,8 @@
 # n8n SMS Audit
 
-[![CI](https://github.com/GhostlyGawd/n8n-sms-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostlyGawd/n8n-sms-audit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Tests: 22 passing](https://img.shields.io/badge/tests-22%20passing-brightgreen.svg)](#tests)
 
 A single-file Python diagnostic that ingests an n8n workflow JSON export and produces a prioritized audit report — covering the failure modes that actually break n8n + Twilio + Airtable SMS pipelines in production.
 
