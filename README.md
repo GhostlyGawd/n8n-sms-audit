@@ -85,6 +85,20 @@ python -m pytest tests -v
 
 22 tests covering every rule (positive + negative path) plus a clean-workflow smoke test that fails if any rule starts producing false positives. CI runs across Python 3.10, 3.11, and 3.12.
 
+## Browser preview server
+
+For prospects who want to try the audit without cloning the repo:
+
+```bash
+python audit_server.py                 # http://localhost:8000
+python audit_server.py --host 0.0.0.0 --port 8000   # public bind for cloud deploy
+PORT=8000 python audit_server.py       # honors $PORT (Heroku/Railway/Fly)
+```
+
+A single-file HTTP server using only the Python stdlib — no Flask, no FastAPI, no dependencies. Renders a paste-and-audit form, runs the audit on the server, returns a styled HTML report. Deploys to any free PaaS in one click.
+
+Health check at `/health` returns `ok`. Audit runs entirely on the server &mdash; no data is logged or stored.
+
 ## License
 
 MIT. Use it freely. PRs welcome.
