@@ -1,0 +1,60 @@
+{
+  "name": "Appointment Reminder Blast — Pre-Audit",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Cron Daily 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 24}]}}
+    },
+    {
+      "id": "2",
+      "name": "Get Tomorrows Appointments",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "list",
+        "table": "Appointments",
+        "filterByFormula": "DATETIME_DIFF({date}, TODAY(), 'days') = 1"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Lookup Patient Phone",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "get",
+        "table": "Patients"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Send Reminder SMS",
+      "type": "n8n-nodes-base.twilio",
+      "parameters": {
+        "to": "8005551234",
+        "message": "Hi! This is a friendly reminder that you have an appointment tomorrow at our clinic. Please arrive 15 minutes before your scheduled time so we can complete intake paperwork. If you need to reschedule, please call us at (800) 555-1234 between 8am and 5pm any weekday. We look forward to seeing you.",
+        "authToken": "EXAMPLE_HARDCODED_TOKEN_REPLACE_WITH_CREDENTIAL_REF"
+      }
+    },
+    {
+      "id": "5",
+      "name": "Send Slack Update To Front Desk",
+      "type": "n8n-nodes-base.slack",
+      "parameters": {
+        "channel": "front-desk",
+        "text": "Reminder sent to {{$json.patient_name}}",
+        "token": "EXAMPLE_HARDCODED_TOKEN_REPLACE_WITH_CREDENTIAL_REF"
+      }
+    },
+    {
+      "id": "6",
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "update",
+        "table": "Appointments"
+      }
+    }
+  ],
+  "settings": {}
+}

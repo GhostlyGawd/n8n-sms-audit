@@ -1,0 +1,75 @@
+{
+  "name": "Order Confirmation SMS — Clean",
+  "settings": {
+    "errorWorkflow": "global-error-handler"
+  },
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Order Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "order-placed",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Respond OK Immediately",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "ok"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Dedup By Order ID",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "parameters": {
+        "compareBy": "fields",
+        "fields": "order_id"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Lookup Customer",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "list",
+        "table": "Customers"
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "5",
+      "name": "Batch By 1 (Twilio rate-safe)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "6",
+      "name": "Send Confirmation",
+      "type": "n8n-nodes-base.twilio",
+      "parameters": {
+        "to": "={{$json.phone_e164}}",
+        "message": "={{'Order ' + $json.order_id + ' confirmed.'}}",
+        "authToken": "={{$credentials.twilio.authToken}}"
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "7",
+      "name": "Log Sent",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "create",
+        "table": "SentLog",
+        "options": {"typecast": true}
+      },
+      "continueOnFail": true
+    }
+  ]
+}

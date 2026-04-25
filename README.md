@@ -1,5 +1,9 @@
 # n8n SMS Audit
 
+[![CI](https://github.com/GhostlyGawd/n8n-sms-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/GhostlyGawd/n8n-sms-audit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 A single-file Python diagnostic that ingests an n8n workflow JSON export and produces a prioritized audit report — covering the failure modes that actually break n8n + Twilio + Airtable SMS pipelines in production.
 
 No credentials required. No API calls. Pure static analysis on the workflow JSON.
@@ -11,13 +15,15 @@ python audit.py path/to/workflow.json                  # Markdown report
 python audit.py path/to/workflow.json --format json    # JSON report
 ```
 
-Try it on the included sample:
+Try it on the included samples:
 
 ```bash
-python audit.py sample_workflow.json
+python audit.py sample_workflow.json              # 4-node sample → 11 findings
+python audit.py samples/clean.json                # 7-node clean flow → 0 findings
+python audit.py samples/complex_multi_issue.json  # 6-node real-world mess → 12 findings
 ```
 
-You should see ~11 findings on the 4-node sample, ranging from a hardcoded Twilio auth token to silent-drop rate-limit issues.
+The `clean.json` sample is the reference for what a well-built workflow looks like — every rule passes.
 
 ## What it catches
 
@@ -69,7 +75,15 @@ Each finding ships with a copy-pasteable fix.
 
 ## Extending
 
-Each rule is a function in `audit.py`, registered in the `CHECKS` list. Add a new rule by writing a function with signature `(report: Report, workflow: dict) -> None` and appending it.
+Each rule is a function in `audit.py`, registered in the `CHECKS` list. Add a new rule by writing a function with signature `(report: Report, workflow: dict) -> None` and appending it. Add a corresponding test in `tests/test_audit.py` covering both the positive and negative case.
+
+## Tests
+
+```bash
+python -m pytest tests -v
+```
+
+22 tests covering every rule (positive + negative path) plus a clean-workflow smoke test that fails if any rule starts producing false positives. CI runs across Python 3.10, 3.11, and 3.12.
 
 ## License
 
