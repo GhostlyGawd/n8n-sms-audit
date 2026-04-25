@@ -1,0 +1,43 @@
+{
+  "name": "Customer Onboarding SMS Flow",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "new-customer",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Get Customer Record",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "list",
+        "table": "Customers"
+      }
+    },
+    {
+      "id": "3",
+      "name": "Send Welcome SMS",
+      "type": "n8n-nodes-base.twilio",
+      "parameters": {
+        "to": "5551234567",
+        "message": "Hey there! Welcome to Acme. We're thrilled to have you on board. Your account is now active and you can sign in at app.acme.com using the email you registered with. If you have any questions, reply to this message anytime — a real human will get back to you within an hour during business hours.",
+        "authToken": "AC1234567890abcdef"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Mark As Sent",
+      "type": "n8n-nodes-base.airtable",
+      "parameters": {
+        "operation": "update",
+        "table": "Customers"
+      }
+    }
+  ],
+  "settings": {}
+}
