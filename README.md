@@ -13,6 +13,7 @@ No credentials required. No API calls. Pure static analysis on the workflow JSON
 ```bash
 python audit.py path/to/workflow.json                  # Markdown report
 python audit.py path/to/workflow.json --format json    # JSON report
+python audit.py path/to/workflow.json --fix > fixed.json   # Auto-remediate the mechanical fixes
 ```
 
 Try it on the included samples:
@@ -66,6 +67,32 @@ error message.
 ```
 
 Each finding ships with a copy-pasteable fix.
+
+## Auto-remediation (`--fix`)
+
+```bash
+python audit.py workflow.json --fix > workflow.fixed.json
+```
+
+Reads the workflow, runs the audit, and writes a remediated workflow JSON to stdout (a summary of applied fixes goes to stderr). The input file is never mutated.
+
+**What `--fix` mechanically applies:**
+
+| Finding | Mechanical fix |
+|---------|---------------|
+| Twilio/Airtable node has no error branch | Sets `onError: "continueErrorOutput"` on the node |
+| Airtable write without typecast | Sets `parameters.options.typecast: true` |
+
+**What `--fix` deliberately leaves to a human:**
+
+- Hardcoded credentials → require knowing your credential names
+- Non-E.164 phone numbers → require knowing your normalization rules
+- Missing dedup → require knowing what to dedup on
+- Missing global error workflow → require choosing the error-handler workflow ID
+- Missing webhook Respond node → require choosing the response payload
+- SMS body length / batching → require human judgment on copy and rate
+
+The result: a workflow JSON you can re-import to n8n that has the safe, mechanical fixes already applied. Then you remediate the remaining findings by hand. Idempotent — running `--fix` on an already-fixed workflow is a no-op.
 
 ## What it deliberately does NOT do
 

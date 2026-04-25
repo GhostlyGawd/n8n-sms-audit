@@ -44,6 +44,7 @@ class Finding:
     detail: str
     node: str | None = None
     fix: str = ""
+    auto_fix: str | None = None  # ID of an auto-fixer that can mechanically apply this fix
 
     def sort_key(self) -> tuple[int, str]:
         return (SEVERITY_ORDER.get(self.severity, 99), self.category)
@@ -132,6 +133,7 @@ def check_twilio_nodes(report: Report, workflow: dict) -> None:
                     "and route the error branch to an Airtable update that flips "
                     "status='failed' + records the error message."
                 ),
+                auto_fix="continue_on_fail",
             )
 
         body = str(params.get("message", "") or params.get("body", ""))
@@ -173,6 +175,7 @@ def check_airtable_nodes(report: Report, workflow: dict) -> None:
                 ),
                 node=name,
                 fix="Set node options.typecast = true unless you've validated upstream.",
+                auto_fix="airtable_typecast",
             )
 
         if not _has_error_branch(node):
@@ -189,6 +192,7 @@ def check_airtable_nodes(report: Report, workflow: dict) -> None:
                     "Set 'On Error' to 'Continue' and add a Wait(2s) + retry "
                     "node, or batch via 'Create Multiple Records' (10 rows/req)."
                 ),
+                auto_fix="continue_on_fail",
             )
 
 
@@ -327,6 +331,47 @@ def audit(workflow: dict) -> Report:
     return report
 
 
+def apply_auto_fixes(workflow: dict, findings: list[Finding]) -> tuple[dict, list[dict]]:
+    """Mechanically apply the subset of findings that have a registered auto_fix.
+
+    Returns a tuple of (remediated workflow, list of applied-fix records).
+    Pure function: input workflow is not mutated. Idempotent: running this on
+    an already-remediated workflow produces the same workflow and an empty
+    applied list.
+    """
+    import copy
+    fixed = copy.deepcopy(workflow)
+    nodes_by_name = {_node_name(n): n for n in _iter_nodes(fixed)}
+    applied: list[dict] = []
+
+    for f in findings:
+        if not f.auto_fix:
+            continue
+        if f.auto_fix == "continue_on_fail":
+            if f.node and f.node in nodes_by_name:
+                node = nodes_by_name[f.node]
+                if not _has_error_branch(node):
+                    node["onError"] = "continueErrorOutput"
+                    applied.append({
+                        "node": f.node,
+                        "fix": "continue_on_fail",
+                        "change": "set onError = continueErrorOutput",
+                    })
+        elif f.auto_fix == "airtable_typecast":
+            if f.node and f.node in nodes_by_name:
+                node = nodes_by_name[f.node]
+                params = node.setdefault("parameters", {})
+                options = params.setdefault("options", {})
+                if not options.get("typecast"):
+                    options["typecast"] = True
+                    applied.append({
+                        "node": f.node,
+                        "fix": "airtable_typecast",
+                        "change": "set parameters.options.typecast = true",
+                    })
+    return fixed, applied
+
+
 def render_markdown(report: Report) -> str:
     counts = report.counts()
     lines = [
@@ -391,6 +436,15 @@ def main() -> int:
         default="md",
         help="Output format (default: md)",
     )
+    parser.add_argument(
+        "--fix",
+        action="store_true",
+        help=(
+            "Mechanically apply auto-fixable findings (continueOnFail on Twilio/"
+            "Airtable nodes, typecast on Airtable writes) and print the remediated "
+            "workflow JSON to stdout. The original file is never modified."
+        ),
+    )
     args = parser.parse_args()
 
     try:
@@ -412,6 +466,16 @@ def main() -> int:
         return 2
 
     report = audit(workflow)
+    if args.fix:
+        fixed, applied = apply_auto_fixes(workflow, report.findings)
+        sys.stderr.write(
+            f"# auto-fix applied {len(applied)} of "
+            f"{sum(1 for f in report.findings if f.auto_fix)} auto-fixable findings\n"
+        )
+        for a in applied:
+            sys.stderr.write(f"#   - {a['node']}: {a['change']}\n")
+        print(json.dumps(fixed, indent=2))
+        return 0
     if args.format == "json":
         print(render_json(report))
     else:

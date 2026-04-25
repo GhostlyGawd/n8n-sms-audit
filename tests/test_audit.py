@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from audit import audit, Report  # noqa: E402
+from audit import audit, apply_auto_fixes, Report  # noqa: E402
 
 
 def _wf(*nodes, settings=None, name="t"):
@@ -292,3 +292,95 @@ def test_sample_workflow_produces_expected_findings():
     assert counts["high"] >= 4, f"expected ≥4 highs, got {counts}"
     assert _has_finding(r, category="security", severity="critical")
     assert _has_finding(r, category="phone_format", severity="high")
+
+
+# ---------- Auto-fix mode ----------------------------------------------------
+
+def test_apply_auto_fixes_does_not_mutate_input():
+    wf = _wf({
+        "id": "1", "name": "Send", "type": "n8n-nodes-base.twilio",
+        "parameters": {"to": "+15551234567", "message": "hi"},
+    })
+    original = {**wf, "nodes": [dict(n) for n in wf["nodes"]]}
+    r = audit(wf)
+    apply_auto_fixes(wf, r.findings)
+    # Original wf untouched
+    assert wf["nodes"][0].get("onError") is None
+    assert wf == original
+
+
+def test_apply_auto_fixes_adds_continue_on_fail_to_twilio():
+    wf = _wf({
+        "id": "1", "name": "Send", "type": "n8n-nodes-base.twilio",
+        "parameters": {"to": "+15551234567", "message": "hi"},
+    })
+    r = audit(wf)
+    fixed, applied = apply_auto_fixes(wf, r.findings)
+    assert fixed["nodes"][0].get("onError") == "continueErrorOutput"
+    assert any(a["fix"] == "continue_on_fail" and a["node"] == "Send" for a in applied)
+
+
+def test_apply_auto_fixes_adds_typecast_to_airtable_write():
+    wf = _wf({
+        "id": "1", "name": "Create Row", "type": "n8n-nodes-base.airtable",
+        "parameters": {"operation": "create"},
+        "continueOnFail": True,
+    })
+    r = audit(wf)
+    fixed, applied = apply_auto_fixes(wf, r.findings)
+    assert fixed["nodes"][0]["parameters"]["options"]["typecast"] is True
+    assert any(a["fix"] == "airtable_typecast" for a in applied)
+
+
+def test_apply_auto_fixes_idempotent():
+    wf = _wf({
+        "id": "1", "name": "Send", "type": "n8n-nodes-base.twilio",
+        "parameters": {"to": "+15551234567", "message": "hi"},
+    })
+    r1 = audit(wf)
+    fixed_once, applied_first = apply_auto_fixes(wf, r1.findings)
+    r2 = audit(fixed_once)
+    fixed_twice, applied_second = apply_auto_fixes(fixed_once, r2.findings)
+    # Second run should detect the fix is already in place and apply nothing
+    # (for the auto-fixable subset)
+    error_handling_findings_second_run = [
+        f for f in r2.findings
+        if f.category == "error_handling" and f.node == "Send"
+    ]
+    assert error_handling_findings_second_run == []
+    assert fixed_twice["nodes"][0].get("onError") == "continueErrorOutput"
+
+
+def test_apply_auto_fixes_preserves_unrelated_node_fields():
+    wf = _wf({
+        "id": "1", "name": "Send", "type": "n8n-nodes-base.twilio",
+        "parameters": {
+            "to": "+15551234567",
+            "message": "hi",
+            "customField": "preserve me",
+        },
+        "position": [100, 200],
+        "typeVersion": 2,
+    })
+    r = audit(wf)
+    fixed, _ = apply_auto_fixes(wf, r.findings)
+    fixed_node = fixed["nodes"][0]
+    assert fixed_node["parameters"]["customField"] == "preserve me"
+    assert fixed_node["position"] == [100, 200]
+    assert fixed_node["typeVersion"] == 2
+
+
+def test_apply_auto_fixes_only_touches_findings_with_auto_fix():
+    """Findings without an auto_fix ID (e.g. phone_format, cost) should not
+    be touched by apply_auto_fixes."""
+    wf = _wf({
+        "id": "1", "name": "Send", "type": "n8n-nodes-base.twilio",
+        "parameters": {"to": "5551234567", "message": "x" * 200},
+        "continueOnFail": True,
+    })
+    r = audit(wf)
+    fixed, applied = apply_auto_fixes(wf, r.findings)
+    # phone_format and cost findings have no auto_fix => no changes applied
+    assert applied == []
+    assert fixed["nodes"][0]["parameters"]["to"] == "5551234567"
+    assert fixed["nodes"][0]["parameters"]["message"] == "x" * 200
