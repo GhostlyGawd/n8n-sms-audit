@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>n8n SMS Audit — buy a hands-on audit ($49)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Hands-on audit of your n8n + Twilio + Airtable SMS workflow. $49 self-serve. Report + auto-fixed workflow JSON delivered within 24 hours.">
+<style>
+  :root { --fg: #1a1a1a; --bg: #fafafa; --accent: #0066cc; --border: #ddd; --green: #1a7f37; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         max-width: 720px; margin: 0 auto; padding: 2rem 1rem; color: var(--fg); background: var(--bg); line-height: 1.55; }
+  h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+  h2 { margin-top: 2rem; font-size: 1.2rem; }
+  .lede { color: #555; font-size: 1.05rem; margin-bottom: 1.5rem; }
+  .price-card { background: white; border: 2px solid var(--accent); border-radius: 12px;
+                padding: 1.5rem 2rem; margin: 1.5rem 0; }
+  .price-card .price { font-size: 2.5rem; font-weight: 700; color: var(--accent); margin: 0; }
+  .price-card .price small { font-size: 0.95rem; color: #666; font-weight: 400; }
+  .cta { display: inline-block; background: var(--accent); color: white; padding: 0.9rem 1.8rem;
+         font-size: 1.05rem; font-weight: 600; border-radius: 8px; text-decoration: none;
+         margin-top: 0.75rem; }
+  .cta:hover { background: #0052a3; }
+  .checkmark { color: var(--green); font-weight: 700; margin-right: 0.4rem; }
+  ul { padding-left: 1.25rem; }
+  ul li { margin-bottom: 0.4rem; }
+  .free-link { color: var(--accent); }
+  .testmode { background: #fff3cd; border: 1px solid #f0d27a; padding: 0.75rem 1rem;
+              border-radius: 6px; font-size: 14px; margin-bottom: 1.5rem; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: #777; font-size: 13px; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="testmode">
+  <strong>⚠️ Demo: this checkout is in Stripe test mode.</strong>
+  Use card <code>4242 4242 4242 4242</code> (any future expiry, any CVC) to simulate a purchase. Real-money checkout flips on once we hit live mode.
+</div>
+
+<h1>Hands-on audit of your n8n SMS workflow</h1>
+<p class="lede">
+  Get a senior-engineer-quality audit of your n8n + Twilio + Airtable SMS automation. Catches the silent killers — rate limits, missing dedup, hardcoded credentials, E.164 mistakes, error-branch gaps — and ships back a remediated workflow JSON ready to re-import.
+</p>
+
+<div class="price-card">
+  <p class="price">$49 <small>USD &middot; one-time</small></p>
+  <p>You email me your workflow JSON export. I run my analyzer + manually verify every finding. Within 24 hours you get back:</p>
+  <ul>
+    <li><span class="checkmark">✓</span> Prioritized audit report (Markdown + JSON, 10 rules covered)</li>
+    <li><span class="checkmark">✓</span> Auto-remediated workflow JSON (continueOnFail, typecast applied) ready to re-import</li>
+    <li><span class="checkmark">✓</span> Top 3 manual fixes flagged with exact step-by-step instructions</li>
+    <li><span class="checkmark">✓</span> 60-second Loom walkthrough of the critical findings</li>
+  </ul>
+  <a class="cta" href="https://buy.stripe.com/test_28EdR81171IR2zm95f8so01">Buy now &rarr;</a>
+</div>
+
+<h2>Want to try it free first?</h2>
+<p>
+  <a class="free-link" href="https://ghostlygawd.github.io/n8n-sms-audit/">Run the audit yourself in your browser →</a>
+  Same engine, no upload. If the free version finds something interesting, the paid audit gives you the remediated workflow JSON + the human-curated top-fixes list.
+</p>
+
+<h2>Need more than self-serve?</h2>
+<p>If you want me to actually <em>deploy</em> the fixes (set up your global error workflow, wire up dedup, rotate hardcoded credentials, verify the remediated flow runs end-to-end against your sandbox), reply to your purchase confirmation email. The hands-on remediation tier is $499 flat and ships within 48 hours.</p>
+
+<h2>Why $49 is fair</h2>
+<ul>
+  <li>The toolkit is open source. You can run the audit yourself for free.</li>
+  <li>You're paying for the human review that catches what the rules don't (subtle business-logic mismatches, naming-convention bugs, etc.) and the time it'd take you to read 11+ findings and prioritize them.</li>
+  <li>If you find a single "would have caused a customer complaint" issue, it pays for itself.</li>
+</ul>
+
+<footer>
+  <a href="https://github.com/GhostlyGawd/n8n-sms-audit">Open-source repo</a> &middot;
+  MIT licensed &middot;
+  Questions? <a href="https://github.com/GhostlyGawd/n8n-sms-audit/issues/new">Open an issue</a>
+</footer>
+</body>
+</html>

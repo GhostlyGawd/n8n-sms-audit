@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thank you — n8n SMS Audit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --fg: #1a1a1a; --bg: #fafafa; --accent: #0066cc; --green: #1a7f37; --border: #ddd; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         max-width: 640px; margin: 0 auto; padding: 2rem 1rem; color: var(--fg); background: var(--bg); line-height: 1.55; }
+  h1 { font-size: 1.85rem; margin: 0 0 0.5rem; color: var(--green); }
+  .step { background: white; border: 1px solid var(--border); border-left: 4px solid var(--accent);
+          border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+  .step strong { color: var(--accent); }
+  code { background: #f4f4f4; padding: 0.1rem 0.35rem; border-radius: 3px;
+         font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.95em; }
+  a { color: var(--accent); }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: #777; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>✓ Thanks — your audit is queued</h1>
+<p>
+  You'll receive an email confirmation from Stripe momentarily. To kick off the audit, follow the three steps below.
+</p>
+
+<div class="step">
+  <strong>Step 1.</strong> Export your n8n workflow as JSON.<br>
+  In n8n: open the workflow → top-right menu (<code>⋯</code>) → <em>Download</em>. You'll get a <code>.json</code> file.
+</div>
+
+<div class="step">
+  <strong>Step 2.</strong> Email the JSON to <code>audits@ghostlygawd.dev</code> (or reply to your Stripe receipt) with subject <code>Audit: &lt;your workflow name&gt;</code>.
+</div>
+
+<div class="step">
+  <strong>Step 3.</strong> Within 24 hours you'll get back: prioritized audit report (Markdown + JSON), auto-remediated workflow JSON, top 3 manual fixes with step-by-step instructions, and a 60-second Loom walkthrough.
+</div>
+
+<p style="margin-top: 2rem;">
+  Questions or stuck on the export? Reply to your Stripe receipt — I'll respond within an hour.
+</p>
+
+<footer>
+  <a href="https://github.com/GhostlyGawd/n8n-sms-audit">Open-source repo</a> &middot;
+  MIT licensed
+</footer>
+</body>
+</html>
