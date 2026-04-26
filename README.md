@@ -4,6 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
+> **Try it now without installing anything: https://ghostlygawd.github.io/n8n-sms-audit/**
+> Paste your workflow JSON, see findings in your browser. Nothing uploaded — runs entirely client-side via Pyodide.
+
 A single-file Python diagnostic that ingests an n8n workflow JSON export and produces a prioritized audit report — covering the failure modes that actually break n8n + Twilio + Airtable SMS pipelines in production.
 
 No credentials required. No API calls. Pure static analysis on the workflow JSON.
