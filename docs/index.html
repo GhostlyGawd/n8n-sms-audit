@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>n8n SMS Audit — try it in your browser</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Static-analysis audit of n8n + Twilio + Airtable SMS workflows. Runs entirely in your browser — no upload, no install.">
+<style>
+  :root {
+    --fg: #1a1a1a; --bg: #fafafa; --accent: #0066cc; --border: #ddd;
+    --critical: #c0392b; --high: #e67e22; --medium: #b8a409; --low: #27ae60;
+    --code-bg: #f4f4f4;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         max-width: 960px; margin: 0 auto; padding: 2rem 1rem; color: var(--fg);
+         background: var(--bg); line-height: 1.5; }
+  h1 { margin: 0 0 0.5rem; font-size: 1.85rem; }
+  h2 { font-size: 1.15rem; margin-top: 2rem; }
+  .lede { color: #555; margin-bottom: 1.5rem; }
+  .links a { color: var(--accent); margin-right: 1rem; text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+  textarea { width: 100%; height: 280px; font-family: ui-monospace, "SF Mono", Menlo,
+             Consolas, monospace; font-size: 13px; padding: 0.75rem;
+             border: 1px solid var(--border); border-radius: 6px; background: white; resize: vertical; }
+  button { background: var(--accent); color: white; border: 0; padding: 0.6rem 1.4rem;
+           font-size: 14px; border-radius: 6px; cursor: pointer; margin-top: 0.75rem;
+           margin-right: 0.5rem; }
+  button:hover { background: #0052a3; }
+  button:disabled { background: #999; cursor: not-allowed; }
+  button.secondary { background: white; color: var(--accent); border: 1px solid var(--accent); }
+  .status { margin: 1rem 0; padding: 0.75rem; background: white;
+            border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+  .status.loading { background: #fffbe5; border-color: #f0d27a; }
+  .status.ready { background: #e9fbe5; border-color: #82c97e; }
+  .status.error { background: #fff3f3; border-color: #d99; color: #800; }
+  .meta { display: flex; gap: 0.75rem; flex-wrap: wrap; margin: 1rem 0; padding: 0.75rem;
+          background: white; border: 1px solid var(--border); border-radius: 6px;
+          align-items: center; font-size: 14px; }
+  .pill { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 12px;
+          font-weight: 600; color: white; }
+  .pill.critical { background: var(--critical); }
+  .pill.high     { background: var(--high); }
+  .pill.medium   { background: var(--medium); }
+  .pill.low      { background: var(--low); }
+  .finding { background: white; border: 1px solid var(--border); border-left: 4px solid #aaa;
+             border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+  .finding.critical { border-left-color: var(--critical); }
+  .finding.high     { border-left-color: var(--high); }
+  .finding.medium   { border-left-color: var(--medium); }
+  .finding.low      { border-left-color: var(--low); }
+  .finding h3 { margin: 0 0 0.5rem 0; font-size: 1rem; display: flex; gap: 0.5rem;
+                align-items: center; flex-wrap: wrap; }
+  .finding .cat { color: #666; font-size: 12px; font-family: ui-monospace, monospace; }
+  .finding pre { background: var(--code-bg); padding: 0.6rem; border-radius: 4px;
+                 white-space: pre-wrap; font-size: 12px; margin: 0.5rem 0 0;
+                 font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .empty { background: white; border: 1px solid var(--border); padding: 2rem;
+           text-align: center; border-radius: 6px; color: #555; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+           color: #777; font-size: 13px; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<h1>n8n SMS Audit</h1>
+<p class="lede">
+  Static-analysis audit of n8n + Twilio + Airtable SMS workflows.
+  Runs <strong>entirely in your browser</strong> via Pyodide &mdash; nothing is uploaded,
+  no account needed, your workflow JSON never leaves this page.
+</p>
+<div class="links">
+  <a href="https://github.com/GhostlyGawd/n8n-sms-audit">GitHub repo &rarr;</a>
+  <a href="https://github.com/GhostlyGawd/n8n-sms-audit#readme">README &rarr;</a>
+  <a href="javascript:void(0)" onclick="loadSample()">Load sample workflow &rarr;</a>
+</div>
+
+<div id="status" class="status loading">Loading audit engine&hellip; (first load downloads ~10 MB Pyodide runtime; cached after)</div>
+
+<form id="form" onsubmit="return runAudit(event)">
+  <textarea id="workflow" placeholder='{"name": "...", "nodes": [...], "settings": {...}}' disabled></textarea>
+  <br>
+  <button type="submit" id="run-btn" disabled>Run Audit</button>
+  <button type="button" class="secondary" id="fix-btn" onclick="runFix()" disabled>Run Audit + --fix</button>
+</form>
+
+<div id="result"></div>
+
+<footer>
+  Open source: <a href="https://github.com/GhostlyGawd/n8n-sms-audit">github.com/GhostlyGawd/n8n-sms-audit</a> &middot; MIT licensed &middot;
+  Need a hands-on audit + remediation? <a href="https://github.com/GhostlyGawd/n8n-sms-audit/issues/new">Open an issue</a> or reach out.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.0/full/pyodide.js"></script>
+<script>
+const SAMPLE_URL = "https://raw.githubusercontent.com/GhostlyGawd/n8n-sms-audit/main/sample_workflow.json";
+const AUDIT_PY_URL = "https://raw.githubusercontent.com/GhostlyGawd/n8n-sms-audit/main/audit.py";
+
+let pyodide = null;
+const statusEl = document.getElementById("status");
+const wfEl = document.getElementById("workflow");
+const runBtn = document.getElementById("run-btn");
+const fixBtn = document.getElementById("fix-btn");
+const resultEl = document.getElementById("result");
+
+function setStatus(text, klass) {
+  statusEl.textContent = text;
+  statusEl.className = "status " + klass;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+async function init() {
+  try {
+    pyodide = await loadPyodide();
+    setStatus("Fetching audit module...", "loading");
+    const auditSource = await (await fetch(AUDIT_PY_URL, { cache: "no-cache" })).text();
+    pyodide.FS.writeFile("/audit.py", auditSource);
+    pyodide.runPython("import sys; sys.path.insert(0, '/'); import audit");
+    setStatus("Ready. Paste an n8n workflow JSON and click Run Audit.", "ready");
+    wfEl.disabled = false;
+    runBtn.disabled = false;
+    fixBtn.disabled = false;
+  } catch (err) {
+    setStatus("Failed to load audit engine: " + err.message + ". Refresh to retry, or use the CLI: pip install nothing, just python audit.py.", "error");
+    console.error(err);
+  }
+}
+
+async function loadSample() {
+  try {
+    const r = await fetch(SAMPLE_URL, { cache: "no-cache" });
+    wfEl.value = await r.text();
+  } catch (err) {
+    alert("Could not fetch sample: " + err.message);
+  }
+}
+
+function renderFindings(report) {
+  const counts = report.counts;
+  const pills = ["critical", "high", "medium", "low"]
+    .map(s => `<span class="pill ${s}">${s.toUpperCase()}: ${counts[s] || 0}</span>`)
+    .join(" ");
+  const meta = `
+    <div class="meta">
+      <strong>${escapeHtml(report.workflow_name)}</strong>
+      &middot; <strong>${report.node_count}</strong> nodes scanned
+      &middot; ${pills}
+    </div>`;
+  if (!report.findings.length) {
+    return meta + '<div class="empty">No issues detected by the configured rule set. This does not mean the workflow is correct &mdash; it means none of the known anti-patterns triggered.</div>';
+  }
+  const blocks = report.findings.map((f, i) => {
+    const nodeBit = f.node ? ` &middot; Node: <code>${escapeHtml(f.node)}</code>` : "";
+    return `
+      <div class="finding ${f.severity}">
+        <h3>${i + 1}. <span class="pill ${f.severity}">${f.severity.toUpperCase()}</span> ${escapeHtml(f.title)}</h3>
+        <div class="cat">Category: <code>${escapeHtml(f.category)}</code>${nodeBit}</div>
+        <p>${escapeHtml(f.detail)}</p>
+        <strong>Recommended fix:</strong>
+        <pre>${escapeHtml(f.fix || "(no automated fix suggestion)")}</pre>
+      </div>`;
+  }).join("");
+  return meta + blocks;
+}
+
+function runAudit(ev) {
+  if (ev) ev.preventDefault();
+  const text = wfEl.value.trim();
+  if (!text) { resultEl.innerHTML = '<div class="status error">Paste a workflow JSON first.</div>'; return false; }
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) {
+    resultEl.innerHTML = `<div class="status error">Invalid JSON: ${escapeHtml(e.message)}</div>`;
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.nodes)) {
+    resultEl.innerHTML = '<div class="status error">That parses as JSON but does not look like an n8n workflow export (expected an object with a "nodes" key).</div>';
+    return false;
+  }
+  try {
+    pyodide.globals.set("__wf_json__", text);
+    const reportJson = pyodide.runPython(`
+import json
+from audit import audit, render_json
+wf = json.loads(__wf_json__)
+render_json(audit(wf))
+`);
+    const report = JSON.parse(reportJson);
+    resultEl.innerHTML = renderFindings(report);
+  } catch (err) {
+    resultEl.innerHTML = `<div class="status error">Audit error: ${escapeHtml(err.message)}</div>`;
+  }
+  return false;
+}
+
+function runFix() {
+  const text = wfEl.value.trim();
+  if (!text) { resultEl.innerHTML = '<div class="status error">Paste a workflow JSON first.</div>'; return; }
+  try {
+    pyodide.globals.set("__wf_json__", text);
+    const out = pyodide.runPython(`
+import json
+from audit import audit, apply_auto_fixes
+wf = json.loads(__wf_json__)
+report = audit(wf)
+fixed, applied = apply_auto_fixes(wf, report.findings)
+json.dumps({"fixed": fixed, "applied": applied}, indent=2)
+`);
+    const parsed = JSON.parse(out);
+    const summary = parsed.applied.length
+      ? parsed.applied.map(a => `&bull; <code>${escapeHtml(a.node)}</code>: ${escapeHtml(a.change)}`).join("<br>")
+      : "<em>No auto-fixable findings to apply.</em>";
+    resultEl.innerHTML = `
+      <div class="meta"><strong>Auto-fix summary</strong> &middot; ${parsed.applied.length} fixes applied</div>
+      <div class="finding"><h3>Applied fixes</h3><div>${summary}</div></div>
+      <div class="finding"><h3>Remediated workflow JSON</h3>
+        <pre>${escapeHtml(JSON.stringify(parsed.fixed, null, 2))}</pre>
+      </div>`;
+  } catch (err) {
+    resultEl.innerHTML = `<div class="status error">Fix error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
