@@ -4,12 +4,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-> **Try it now without installing anything: https://ghostlygawd.github.io/n8n-sms-audit/**
-> Paste your workflow JSON, see findings in your browser. Nothing uploaded — runs entirely client-side via Pyodide.
+**Static-analysis audit for n8n + Twilio + Airtable SMS workflows.** Catches the silent killers — rate limits, missing dedup, hardcoded credentials, non-E.164 phone numbers, no error branches, webhook timeouts — before they hit production and your customers complain.
 
-A single-file Python diagnostic that ingests an n8n workflow JSON export and produces a prioritized audit report — covering the failure modes that actually break n8n + Twilio + Airtable SMS pipelines in production.
+> 🌐 **[Try it now without installing anything →](https://ghostlygawd.github.io/n8n-sms-audit/)**
+> Paste your workflow JSON, see findings in 1 second. Runs entirely in your browser via Pyodide — nothing uploaded, your data never leaves the page.
 
-No credentials required. No API calls. Pure static analysis on the workflow JSON.
+## Why this exists
+
+If you're running an SMS automation in n8n, you've probably been bitten by at least one of:
+
+- A Twilio rate-limit-induced workflow halt that left half your customers stuck in "pending"
+- Webhook retries causing duplicate sends, leading to angry replies
+- A hardcoded auth token that a teammate found by reading the workflow JSON
+- A node that silently dropped messages because the phone number wasn't in E.164
+- Error workflows that don't fire because nobody configured the global error handler
+
+This tool reads your workflow export and tells you which of these you're vulnerable to, with exact, copy-pasteable fixes. No credentials required, no API calls, pure static analysis.
 
 ## Quick start
 
